@@ -17,6 +17,8 @@ engine = create_async_engine(
     max_overflow=10,
 )
 
+print(settings.DATABASE_URL)
+
 async_session_factory = async_sessionmaker(
     engine,
     class_=AsyncSession,
