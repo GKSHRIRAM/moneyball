@@ -12,9 +12,9 @@ interface ToastMessage {
 }
 
 interface ToastContextType {
-  success: (msg: string) => void
-  error: (msg: string) => void
-  info: (msg: string) => void
+  success: (msg: string | any) => void
+  error: (msg: string | any) => void
+  info: (msg: string | any) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
@@ -31,9 +31,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }, 3500)
   }, [])
 
-  const success = useCallback((msg: string) => addToast("success", msg), [addToast])
-  const error = useCallback((msg: string) => addToast("error", msg), [addToast])
-  const info = useCallback((msg: string) => addToast("info", msg), [addToast])
+  const success = useCallback((msg: any) => addToast("success", typeof msg === "string" ? msg : JSON.stringify(msg)), [addToast])
+  const error = useCallback((msg: any) => addToast("error", typeof msg === "string" ? msg : JSON.stringify(msg)), [addToast])
+  const info = useCallback((msg: any) => addToast("info", typeof msg === "string" ? msg : JSON.stringify(msg)), [addToast])
 
   return (
     <ToastContext.Provider value={{ success, error, info }}>

@@ -41,7 +41,14 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       if (isAxiosError(err) && err.response?.data?.detail) {
-        error(err.response.data.detail);
+        const detail = err.response.data.detail;
+        if (typeof detail === "string") {
+          error(detail);
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          error(detail.map(d => `${d.loc?.[1] || d.loc?.[0] || 'Field'}: ${d.msg}`).join(", "));
+        } else {
+          error("Invalid email or password.");
+        }
       } else {
         error("Invalid email or password.");
       }
