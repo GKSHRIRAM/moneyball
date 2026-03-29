@@ -136,3 +136,13 @@ async def get_onboarding_status(
         has_policy=has_policy,
         is_complete=has_store and has_policy,
     )
+
+
+async def get_store_for_user(db: AsyncSession, user_id: UUID) -> Store:
+    """Fetch retailer's store. Raises NotFoundError if missing."""
+    result = await db.execute(select(Store).where(Store.user_id == user_id))
+    store = result.scalar_one_or_none()
+    if not store:
+        raise NotFoundError(detail="Store not found. Complete onboarding first.")
+    return store
+

@@ -13,6 +13,7 @@ from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.models.deal import Deal
 from app.models.product import Product
 from app.models.store import Store
+from app.services import risk_engine, store_service
 from app.schemas.product import (
     CSVUploadResponse,
     ProductCreateRequest,
@@ -23,12 +24,7 @@ from app.schemas.product import (
 
 
 async def get_store_for_user(db: AsyncSession, user_id: UUID) -> Store:
-    """Fetch retailer's store. Raises NotFoundError if missing."""
-    result = await db.execute(select(Store).where(Store.user_id == user_id))
-    store = result.scalar_one_or_none()
-    if not store:
-        raise NotFoundError(detail="Store not found. Complete onboarding first.")
-    return store
+    return await store_service.get_store_for_user(db, user_id)
 
 
 async def list_products(
@@ -114,7 +110,7 @@ async def create_product(
     db.add(product)
     await db.commit()
     await db.refresh(product)
-    return product
+    return await risk_engine.rescore_product(db, product)
 
 
 async def update_product(
@@ -128,7 +124,7 @@ async def update_product(
     db.add(product)
     await db.commit()
     await db.refresh(product)
-    return product
+    return await risk_engine.rescore_product(db, product)
 
 
 async def delete_product(db: AsyncSession, product: Product) -> None:
@@ -259,6 +255,7 @@ async def bulk_create_from_csv(
 
     if created > 0:
         await db.commit()
+        await risk_engine.rescore_all_products_for_store(db, store_id)
 
     return CSVUploadResponse(
         created=created,

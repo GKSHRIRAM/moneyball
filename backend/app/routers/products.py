@@ -4,7 +4,7 @@ from datetime import date
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import UserRole
@@ -17,7 +17,7 @@ from app.schemas.product import (
     ProductOut,
     ProductUpdateRequest,
 )
-from app.services import product_service
+from app.services import product_service, risk_engine
 
 router = APIRouter()
 
@@ -125,40 +125,10 @@ async def get_product_risk(
     store = await product_service.get_store_for_user(db, user.id)
     product = await product_service.get_product(db, product_id, store.id)
 
-    days = (product.expiry_date - date.today()).days
-    # Simple risk heuristic for Phase 3 (Phase 4 will improve)
-    if days <= 0:
-        risk = 100
-    elif days <= 2:
-        risk = 90
-    elif days <= 5:
-        risk = 75
-    elif days <= 7:
-        risk = 60
-    elif days <= 14:
-        risk = 40
-    else:
-        risk = max(0, 20 - days)
-
-    # Risk label
-    if risk <= 30:
-        label = "safe"
-    elif risk <= 60:
-        label = "watch"
-    elif risk <= 85:
-        label = "urgent"
-    else:
-        label = "critical"
-
-    # Suggested discount
-    if risk >= 86:
-        suggested = 50
-    elif risk >= 61:
-        suggested = 35
-    elif risk >= 31:
-        suggested = 20
-    else:
-        suggested = 10
+    days = max((product.expiry_date - date.today()).days, 0)
+    risk = risk_engine.compute_risk_score(product.expiry_date, product.quantity, product.category)
+    label = risk_engine.get_risk_label(risk)
+    suggested = risk_engine.suggest_discount(risk, product.category)
 
     return {
         "product_id": str(product.id),
@@ -167,3 +137,14 @@ async def get_product_risk(
         "days_to_expiry": days,
         "suggested_discount_pct": suggested,
     }
+
+@router.post("/rescore")
+async def rescore_products(
+    background_tasks: BackgroundTasks,
+    user: RetailerUser,
+    db: DB,
+):
+    """Trigger background rescore for retailer store."""
+    store = await product_service.get_store_for_user(db, user.id)
+    background_tasks.add_task(risk_engine.rescore_all_products_for_store, db, store.id)
+    return {"message": "Rescoring started", "store_id": str(store.id)}

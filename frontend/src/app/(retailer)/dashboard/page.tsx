@@ -2,6 +2,7 @@
 
 import { useAuthStore } from "@/store/authStore";
 import { useProducts } from "@/hooks/useProducts";
+import { useRetailerDeals, useDealSuggestions } from "@/hooks/useDeals";
 import { formatPrice } from "@/lib/utils";
 import { RiskBadge } from "@/components/retailer/RiskBadge";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +35,9 @@ export default function RetailerDashboardPage() {
 
   const products = allProducts?.items || [];
   const totalProducts = allProducts?.total || 0;
+
+  const { data: activeDealsData } = useRetailerDeals("active");
+  const { data: suggestionsData } = useDealSuggestions();
   
   // Calculate stats
   const expiringThisWeek = products.filter(p => p.days_to_expiry <= 7).length;
@@ -89,6 +93,25 @@ export default function RetailerDashboardPage() {
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in pb-20">
+      {suggestionsData && suggestionsData.length > 0 && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-red-900">Action Required</h3>
+              <p className="text-sm text-red-700">You have {suggestionsData.length} deal suggestions ready for review.</p>
+            </div>
+          </div>
+          <Link href="/retailer-deals?tab=suggestions">
+            <Button variant="danger" size="sm" className="whitespace-nowrap shadow-sm">
+              Review suggestions <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div>
@@ -155,11 +178,10 @@ export default function RetailerDashboardPage() {
           },
           { 
             label: "Active Deals", 
-            value: 0, 
+            value: activeDealsData?.total || 0, 
             icon: Tag, 
             color: "text-emerald-500", 
             bg: "bg-emerald-50",
-            subtitle: "Phase 5"
           },
         ].map((stat) => (
           <div
@@ -170,11 +192,6 @@ export default function RetailerDashboardPage() {
               <div className={cn("p-3 rounded-xl transition-colors", stat.bg)}>
                 <stat.icon size={20} className={stat.color} />
               </div>
-              {stat.subtitle && (
-                <span className="text-[10px] uppercase font-black tracking-widest text-gray-300">
-                  {stat.subtitle}
-                </span>
-              )}
             </div>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
               {stat.label}
@@ -240,14 +257,11 @@ export default function RetailerDashboardPage() {
                         <RiskBadge risk_label={product.risk_label} showScore={false} />
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          disabled 
-                          title="Deal creation available in Phase 5"
-                        >
-                          Price Drop
-                        </Button>
+                        <Link href="/retailer-deals?tab=suggestions">
+                          <Button size="sm" variant="ghost">
+                            Create Deal
+                          </Button>
+                        </Link>
                       </td>
                     </tr>
                   ))
