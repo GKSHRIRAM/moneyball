@@ -1,7 +1,7 @@
 """retailer strategy fields on store_policies
 
-Revision ID: 0002
-Revises: 0001
+Revision ID: c4d8e9f0a1b3
+Revises: fb527e52428b
 Create Date: 2026-03-28
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0002"
-down_revision: Union[str, None] = "0001"
+revision: str = "c4d8e9f0a1b3"
+down_revision: Union[str, None] = "fb527e52428b"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

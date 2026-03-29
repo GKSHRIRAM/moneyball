@@ -11,7 +11,10 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/types/auth";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/deals", label: "Home", icon: Home },
@@ -27,7 +30,22 @@ export default function ConsumerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { clearAuth } = useAuthStore();
+  const router = useRouter();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (user?.role !== UserRole.consumer) {
+        router.push("/dashboard");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  if (isLoading || !isAuthenticated || user?.role !== UserRole.consumer) {
+    return null; // Don't flash layout while redirecting
+  }
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -44,14 +62,19 @@ export default function ConsumerLayout({
             </span>
           </Link>
 
-          {/* Notification bell */}
-          <button
-            className="relative w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5 text-charcoal" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
-          </button>
+          {/* User & Notifications */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-charcoal hidden sm:block">
+              Welcome, {user?.name || "Guest"}
+            </span>
+            <button
+              className="relative w-10 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5 text-charcoal" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -72,10 +95,10 @@ export default function ConsumerLayout({
                 href={isProfile ? "#" : href}
                 onClick={
                   isProfile
-                    ? (e) => {
+                    ? async (e) => {
                         e.preventDefault();
-                        clearAuth();
-                        window.location.href = "/login";
+                        await logout();
+                        router.push("/login");
                       }
                     : undefined
                 }

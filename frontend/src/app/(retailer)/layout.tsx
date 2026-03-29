@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -14,9 +14,12 @@ import {
   X,
   Bell,
   SlidersHorizontal,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/types/auth";
+import { useOnboardingStatus } from "@/hooks/useStore";
 
 const SIDEBAR_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,12 +36,51 @@ export default function RetailerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, clearAuth } = useAuthStore();
+  const router = useRouter();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { data: onboarding } = useOnboardingStatus();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    clearAuth();
-    window.location.href = "/login";
+  // Auth guard
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (user?.role !== UserRole.retailer) {
+        router.push("/deals");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  // Onboarding guard: redirect to /onboarding if not complete
+  useEffect(() => {
+    if (
+      onboarding &&
+      !onboarding.is_complete &&
+      pathname !== "/onboarding"
+    ) {
+      router.push("/onboarding");
+    }
+  }, [onboarding, pathname, router]);
+
+  // If already onboarded and visiting /onboarding, redirect to dashboard
+  useEffect(() => {
+    if (
+      onboarding &&
+      onboarding.is_complete &&
+      pathname === "/onboarding"
+    ) {
+      router.push("/dashboard");
+    }
+  }, [onboarding, pathname, router]);
+
+  if (isLoading || !isAuthenticated || user?.role !== UserRole.retailer) {
+    return null;
+  }
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   return (
@@ -89,8 +131,14 @@ export default function RetailerLayout({
           })}
         </nav>
 
-        {/* Bottom: user + logout */}
+        {/* Bottom: user + logout + onboarding status */}
         <div className="px-3 pb-4 space-y-2">
+          {onboarding?.is_complete && (
+            <div className="flex items-center gap-2 px-3 py-2 text-green-400 text-xs font-medium">
+              <CheckCircle size={14} />
+              <span>Store setup complete</span>
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"

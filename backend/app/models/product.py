@@ -35,6 +35,7 @@ class Product(Base):
     category: Mapped[StoreCategory] = mapped_column(
         Enum(StoreCategory, name="storecategory", create_constraint=True,
              create_type=False),
+        index=True,
         nullable=False,
     )
     mrp: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
@@ -43,7 +44,7 @@ class Product(Base):
     batch_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     expiry_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

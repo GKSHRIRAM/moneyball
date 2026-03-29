@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import time
+from datetime import datetime, time
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
@@ -46,6 +46,9 @@ class StoreStrategyRead(BaseModel):
     fulfillment_mode: str
     hide_outside_hours: bool
     enabled_categories: Optional[Union[List[Any], Dict[str, Any]]] = None
+
+    created_at: datetime
+    updated_at: datetime
 
 
 class StoreStrategyUpdate(BaseModel):

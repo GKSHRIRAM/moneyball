@@ -22,7 +22,7 @@ class User(Base):
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="userrole", create_constraint=True), nullable=False
+        Enum(UserRole, name="userrole", create_constraint=True), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -31,7 +31,7 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     # ── Relationships (lazy, populated in later phases) ───────
     stores = relationship("Store", back_populates="owner", lazy="selectin")

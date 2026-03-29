@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import time
+from datetime import datetime, time, timezone
 from typing import Any, Optional
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Time
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Time
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,7 +36,20 @@ class StorePolicy(Base):
     hide_outside_hours: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-    enabled_categories = mapped_column(JSON, nullable=True)
+    enabled_categories = mapped_column(
+        JSON, default=["bakery", "grocery", "fmcg"], nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
 
     # ── Retailer onboarding & strategy (see migration 0002) ───
     retail_domain: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)

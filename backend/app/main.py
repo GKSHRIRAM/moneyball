@@ -59,10 +59,12 @@ def create_app() -> FastAPI:
     async def ping():
         return {"status": "ok"}
 
-    # ── Routers (added in later phases) ───────────────────────
-    # from app.routers import auth, users, stores, products, deals, reservations, notifications
-    # app.include_router(auth.router)
-    # ...
+    # ── Routers ────────────────────────────────────────────────
+    from app.routers import auth, users, stores, products
+    app.include_router(auth.router, prefix="/auth", tags=["auth"])
+    app.include_router(users.router, prefix="/users", tags=["users"])
+    app.include_router(stores.router, prefix="/stores", tags=["stores"])
+    app.include_router(products.router, prefix="/products", tags=["products"])
 
     return app
 

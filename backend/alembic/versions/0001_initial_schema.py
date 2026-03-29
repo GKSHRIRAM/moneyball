@@ -66,8 +66,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True),
                   server_default=sa.text("now()"), nullable=False),
     )
-    op.create_index("idx_stores_location", "stores", ["location"],
-                    postgresql_using="gist")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_stores_location ON stores USING gist (location)")
 
     # ── 3. store_policies ─────────────────────────────────────
     op.create_table(
@@ -125,13 +124,14 @@ def upgrade() -> None:
         sa.Column("slug", sa.String(50), unique=True, nullable=False),
         sa.Column("platform_policy", postgresql.JSON(), nullable=True),
     )
-    # Seed data
+    # Seed data with conflict handling
     op.execute(
         """
         INSERT INTO categories (id, name, slug, platform_policy) VALUES
         (1, 'Bakery',  'bakery',  '{"min_days_before_list": 1, "pickup_only": false}'),
         (2, 'Grocery', 'grocery', '{"min_days_before_list": 3, "pickup_only": false}'),
         (3, 'FMCG',    'fmcg',    '{"min_days_before_list": 7, "pickup_only": false}')
+        ON CONFLICT (id) DO NOTHING
         """
     )
 
