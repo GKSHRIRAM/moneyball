@@ -1,20 +1,13 @@
 import { create } from "zustand";
 import { decodeToken, getAccessToken, clearTokens, setTokens } from "@/lib/auth";
-import { UserRole } from "@/types/auth";
-
-interface AuthUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  name: string;
-}
+import { UserRole, AuthResponse, User } from "@/types/auth";
 
 interface AuthState {
-  user: AuthUser | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
-  clearAuth: () => void;
+  login: (response: AuthResponse) => void;
+  logout: () => void;
   setLoading: (loading: boolean) => void;
   hydrate: () => void;
 }
@@ -24,13 +17,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
 
-  setAuth: (user, accessToken, refreshToken) => {
-    setTokens(accessToken, refreshToken);
-    set({ user, isAuthenticated: true, isLoading: false });
+  login: (response: AuthResponse) => {
+    setTokens(response.access_token, response.refresh_token);
+    document.cookie = `dealdrop_role=${response.user.role}; path=/`;
+    set({ user: response.user, isAuthenticated: true, isLoading: false });
   },
 
-  clearAuth: () => {
+  logout: () => {
     clearTokens();
+    document.cookie = "dealdrop_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     set({ user: null, isAuthenticated: false, isLoading: false });
   },
 
@@ -46,17 +41,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     const decoded = decodeToken(token);
     if (!decoded || decoded.exp * 1000 < Date.now()) {
       clearTokens();
+      document.cookie = "dealdrop_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       set({ user: null, isAuthenticated: false, isLoading: false });
       return;
     }
 
-    // We only have sub + role from the token — name/email come from API later
+    // Since we only store sub + role in JWT, we create a stub User.
+    // In a real app we would call /users/me here to get full details.
     set({
       user: {
         id: decoded.sub,
         email: "",
         role: decoded.role as UserRole,
-        name: "",
+        name: "User", // Will be populated when we implement /users/me
+        is_active: true,
+        created_at: "",
       },
       isAuthenticated: true,
       isLoading: false,

@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
-from app.db.base import Base  # noqa: F401 — pulls in all models
+from app import models  # noqa: F401 — pulls in all models via app.models.__init__
 
 # ── Alembic Config object ────────────────────────────────────
 config = context.config
@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # Set the database URL from application settings.
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
-target_metadata = Base.metadata
+target_metadata = models.Base.metadata
 
 
 # ── Offline migrations ────────────────────────────────────────

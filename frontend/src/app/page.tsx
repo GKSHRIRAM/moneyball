@@ -2,58 +2,39 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { Spinner } from "@/components/ui/Spinner";
 import { UserRole } from "@/types/auth";
 
-export default function HomePage() {
+export default function RootPage() {
   const router = useRouter();
-  const { hydrate, isAuthenticated, isLoading, user } = useAuthStore();
+  const { isLoading, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!isAuthenticated) {
-      router.replace("/login");
-      return;
-    }
-
-    if (user?.role === UserRole.retailer) {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/deals");
+    // Rely on useAuth's built-in hydration from useEffect, just handle navigation here
+    if (!isLoading) {
+      if (isAuthenticated && user) {
+        if (user.role === UserRole.retailer) {
+          router.push("/dashboard");
+        } else {
+          router.push("/deals");
+        }
+      } else {
+        router.push("/login");
+      }
     }
   }, [isLoading, isAuthenticated, user, router]);
 
+  // While checking auth, show a branded spinner screen
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface">
-      {/* Logo */}
-      <div className="animate-fade-in flex flex-col items-center gap-6">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-2xl bg-charcoal flex items-center justify-center shadow-lg">
-            <span className="text-2xl font-black text-white tracking-tight">
-              D
-            </span>
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary animate-pulse-glow" />
-        </div>
-
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-charcoal tracking-tight">
-            DealDrop
-          </h1>
-          <p className="text-sm font-medium tracking-[0.2em] uppercase text-primary mt-1">
-            Save More. Waste Less.
-          </p>
-        </div>
-
-        {/* Spinner */}
-        <div className="mt-4">
-          <div className="w-8 h-8 border-3 border-gray-200 border-t-primary rounded-full animate-spin" />
-        </div>
+    <div className="min-h-screen bg-surface flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center gap-6">
+        <h1 className="text-4xl font-black italic tracking-tighter shadow-sm p-4 bg-charcoal rounded-xl">
+          <span className="text-white">Deal</span>
+          <span className="text-primary">Drop</span>
+        </h1>
+        <Spinner size="lg" className="text-primary" />
+        <p className="text-charcoal font-medium animate-pulse">Loading experience...</p>
       </div>
     </div>
   );

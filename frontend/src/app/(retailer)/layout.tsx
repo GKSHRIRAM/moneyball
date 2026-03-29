@@ -15,7 +15,10 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/types/auth";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const SIDEBAR_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,12 +34,27 @@ export default function RetailerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, clearAuth } = useAuthStore();
+  const router = useRouter();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    clearAuth();
-    window.location.href = "/login";
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (user?.role !== UserRole.retailer) {
+        router.push("/deals");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  if (isLoading || !isAuthenticated || user?.role !== UserRole.retailer) {
+    return null; // Don't flash layout while redirecting
+  }
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   return (

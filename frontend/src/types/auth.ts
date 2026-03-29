@@ -17,11 +17,6 @@ export interface User {
   created_at: string;
 }
 
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-}
-
 export interface LoginRequest {
   email: string;
   password: string;
@@ -36,6 +31,8 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
   user: User;
-  tokens: AuthTokens;
 }
