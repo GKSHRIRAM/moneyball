@@ -97,10 +97,14 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccess}`;
       }
       return api(originalRequest);
-    } catch (refreshError) {
+    } catch (refreshError: any) {
       processQueue(refreshError, null);
 
-      if (typeof window !== "undefined") {
+      const isAuthError =
+        refreshError.response?.status === 401 ||
+        refreshError.response?.status === 403;
+
+      if (isAuthError && typeof window !== "undefined") {
         localStorage.removeItem("dealdrop_access_token");
         localStorage.removeItem("dealdrop_refresh_token");
         window.location.href = "/login";

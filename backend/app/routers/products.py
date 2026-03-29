@@ -30,7 +30,7 @@ async def list_products(
     user: RetailerUser,
     db: DB,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=50),
+    page_size: int = Query(default=20, ge=1, le=100),
     category: str | None = Query(default=None),
     expiry_filter: str | None = Query(default=None),
     risk_filter: str | None = Query(default=None),

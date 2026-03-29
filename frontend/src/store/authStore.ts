@@ -61,16 +61,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoading: false,
     });
 
-    // Then fetch full user profile in background
-    api.get<User>("/users/me").then((res) => {
-      set({ user: res.data });
-      // Keep the cookie in sync with the actual role
-      document.cookie = `dealdrop_role=${res.data.role}; path=/`;
-    }).catch(() => {
-      // If /users/me fails (e.g. token truly invalid), clear auth
-      clearTokens();
-      document.cookie = "dealdrop_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      set({ user: null, isAuthenticated: false, isLoading: false });
-    });
+    api.get<User>("/users/me")
+      .then((res) => {
+        set({ user: res.data });
+        document.cookie = `dealdrop_role=${res.data.role}; path=/`;
+      })
+      .catch((err) => {
+        // Only log out if it's explicitly a 401/403 (unauthorized/forbidden)
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          clearTokens();
+          document.cookie =
+            "dealdrop_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          set({ user: null, isAuthenticated: false, isLoading: false });
+        } else {
+          console.error("Failed to fetch user profile:", err);
+        }
+      });
   },
 }));

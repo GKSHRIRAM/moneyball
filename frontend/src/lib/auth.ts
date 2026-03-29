@@ -37,13 +37,31 @@ export function decodeToken(token: string): DecodedToken | null {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
-    const decoded = JSON.parse(atob(payload));
+    
+    // Add Base64 padding to prevent atob DOMException errors on unpadded strings
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    const padded = pad ? base64 + "=".repeat(4 - pad) : base64;
+    
+    // Use decodeURIComponent and escape to handle UTF-8 chars in user names inside the JWT (safely parses to JSON)
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(padded)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+
+    const decoded = JSON.parse(jsonPayload);
     return {
       sub: decoded.sub,
       role: decoded.role,
       exp: decoded.exp,
     };
-  } catch {
+  } catch (err) {
+    console.error("Token decoding failed:", err);
     return null;
   }
 }
