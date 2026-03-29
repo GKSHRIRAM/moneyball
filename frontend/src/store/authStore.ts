@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { decodeToken, getAccessToken, clearTokens, setTokens } from "@/lib/auth";
 import { UserRole, AuthResponse, User } from "@/types/auth";
+import api from "@/lib/api";
 
 interface AuthState {
   user: User | null;
@@ -46,19 +47,30 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
 
-    // Since we only store sub + role in JWT, we create a stub User.
-    // In a real app we would call /users/me here to get full details.
+    // Set authenticated immediately from JWT so protected routes render
     set({
       user: {
         id: decoded.sub,
         email: "",
         role: decoded.role as UserRole,
-        name: "User", // Will be populated when we implement /users/me
+        name: "",
         is_active: true,
         created_at: "",
       },
       isAuthenticated: true,
       isLoading: false,
+    });
+
+    // Then fetch full user profile in background
+    api.get<User>("/users/me").then((res) => {
+      set({ user: res.data });
+      // Keep the cookie in sync with the actual role
+      document.cookie = `dealdrop_role=${res.data.role}; path=/`;
+    }).catch(() => {
+      // If /users/me fails (e.g. token truly invalid), clear auth
+      clearTokens();
+      document.cookie = "dealdrop_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      set({ user: null, isAuthenticated: false, isLoading: false });
     });
   },
 }));

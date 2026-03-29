@@ -5,8 +5,11 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("dealdrop_role")?.value;
   const url = request.nextUrl.clone();
 
-  // Protect Dashboard (Retailer only)
-  if (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/products")) {
+  // Protect Retailer routes
+  const retailerPaths = ["/dashboard", "/products", "/onboarding", "/settings", "/retailer-deals", "/retailer-reservations"];
+  const isRetailerRoute = retailerPaths.some((p) => url.pathname.startsWith(p));
+
+  if (isRetailerRoute) {
     if (!token) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
@@ -31,5 +34,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/products/:path*", "/deals/:path*", "/reservations/:path*"],
+  matcher: ["/dashboard/:path*", "/products/:path*", "/deals/:path*", "/reservations/:path*", "/onboarding/:path*", "/settings/:path*", "/retailer-deals/:path*", "/retailer-reservations/:path*"],
 };

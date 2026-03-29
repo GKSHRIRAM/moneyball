@@ -1,8 +1,9 @@
 """Store policy model — per-store configuration."""
 
+from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,7 +33,20 @@ class StorePolicy(Base):
     hide_outside_hours: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-    enabled_categories = mapped_column(JSON, nullable=True)
+    enabled_categories = mapped_column(
+        JSON, default=["bakery", "grocery", "fmcg"], nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
 
     # ── Relationships ─────────────────────────────────────────
     store = relationship("Store", back_populates="policies")

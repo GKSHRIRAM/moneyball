@@ -2,13 +2,11 @@
 
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.exceptions import UnauthorizedError
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 
 # ── Token helpers ──────────────────────────────────────────────
@@ -56,10 +54,20 @@ def decode_token(token: str) -> dict:
 
 
 def hash_password(password: str) -> str:
-    """Bcrypt-hash a plain-text password (12 rounds)."""
-    return pwd_context.hash(password)
+    """Bcrypt-hash a plain-text password using the native bcrypt library."""
+    # Bcrypt requires bytes
+    pwd_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Verify a plain-text password against its hash."""
-    return pwd_context.verify(plain, hashed)
+    """Verify a plain-text password against its bcrypt hash."""
+    try:
+        return bcrypt.checkpw(
+            plain.encode("utf-8"), 
+            hashed.encode("utf-8")
+        )
+    except Exception:
+        return False

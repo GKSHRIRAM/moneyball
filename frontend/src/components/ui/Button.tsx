@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/lib/utils"
-import { Spinner } from "./Spinner"
+import { Spinner } from "@/components/ui/Spinner"
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger"
